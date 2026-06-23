@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>草龙文化历史展 - 湖口草龙博物馆</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5d4037',    // 主色调：棕褐色
+                        secondary: '#d32f2f',  // 辅助色：红色
+                        neutral: '#f8f0e3',    // 中性色：米白色
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            }
+        }
+        /* Scroll reveal animations */
+        [data-reveal] {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        [data-reveal].revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        [data-reveal="left"] {
+            transform: translateX(-40px);
+        }
+        [data-reveal="left"].revealed {
+            transform: translateX(0);
+        }
+        [data-reveal="right"] {
+            transform: translateX(40px);
+        }
+        [data-reveal="right"].revealed {
+            transform: translateX(0);
+        }
+        [data-reveal="scale"] {
+            transform: scale(0.9);
+        }
+        [data-reveal="scale"].revealed {
+            transform: scale(1);
+        }
+        [data-reveal-delay="1"] { transition-delay: 0.1s; }
+        [data-reveal-delay="2"] { transition-delay: 0.2s; }
+        [data-reveal-delay="3"] { transition-delay: 0.3s; }
+        [data-reveal-delay="4"] { transition-delay: 0.4s; }
+
+        /* Lightbox */
+        .lightbox-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            cursor: zoom-out;
+        }
+        .lightbox-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .lightbox-overlay img {
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .lightbox-overlay.active img {
+            transform: scale(1);
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 10000;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .lightbox-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Page transitions */
+        body {
+            animation: pageFadeIn 0.4s ease;
+        }
+        body.page-fading-out {
+            animation: pageFadeOut 0.3s ease forwards;
+        }
+        @keyframes pageFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes pageFadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Interactive timeline */
+        .timeline-item {
+            cursor: pointer;
+        }
+        .timeline-item .timeline-dot {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .timeline-item:hover .timeline-dot,
+        .timeline-item:hover [class*="rounded-full"][class*="bg-primary"] {
+            transform: translate(-50%, -50%) scale(1.3);
+            box-shadow: 0 0 20px rgba(211, 47, 47, 0.4);
+        }
+        .timeline-detail {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, opacity 0.3s ease, margin-top 0.3s ease;
+            opacity: 0;
+            margin-top: 0;
+        }
+        .timeline-item.expanded .timeline-detail {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 1rem;
+        }
+        .expand-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.875rem;
+            color: #d32f2f;
+            margin-top: 0.5rem;
+            transition: opacity 0.3s;
+        }
+        .timeline-item.expanded .expand-hint {
+            opacity: 0;
+        }
+        @keyframes dotPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.3); }
+            50% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
+        }
+    </style>
+</head>
+<body class="bg-neutral">
+    <!-- 导航栏 -->
+    <nav class="bg-primary text-white sticky top-0 z-50 shadow-md">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="#" class="flex items-center">
+                <i class="fa fa-dragon mr-2 text-secondary"></i>
+                <span class="font-bold text-xl">湖口草龙博物馆</span>
+            </a>
+            <div class="hidden md:flex space-x-8">
+                <a href="index.html" class="hover:text-secondary transition-colors">首页</a>
+                <a href="湖口草龙博物馆介绍页.html" class="hover:text-secondary transition-colors">草龙介绍</a>
+                <a href="#" class="text-secondary font-medium">展览展示</a>
+                <a href="草龙设计室.html" class="hover:text-secondary transition-colors">草龙设计室</a>
+                <a href="草龙数据可视化.html" class="hover:text-secondary transition-colors">数据可视化</a>
+                <a href="#" class="hover:text-secondary transition-colors">联系我们</a>
+            </div>
+            <button id="mobile-menu-btn" class="md:hidden text-white">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+        <!-- Mobile menu panel -->
+        <div id="mobile-menu" class="hidden md:hidden container mx-auto px-4 pb-4">
+            <a href="index.html#hero" class="block py-2 text-white hover:text-secondary transition-colors">首页</a>
+            <a href="湖口草龙博物馆介绍页.html" class="block py-2 text-white hover:text-secondary transition-colors">草龙介绍</a>
+            <a href="#history" class="block py-2 text-white hover:text-secondary transition-colors">展览展示</a>
+            <a href="草龙设计室.html" class="block py-2 text-white hover:text-secondary transition-colors">草龙设计室</a>
+            <a href="草龙数据可视化.html" class="block py-2 text-white hover:text-secondary transition-colors">数据可视化</a>
+            <a href="index.html#contact" class="block py-2 text-white hover:text-secondary transition-colors">联系我们</a>
+        </div>
+    </nav>
+
+    <!-- 英雄区 -->
+    <header class="relative h-[60vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <img src="https://picture01.52hrttpic.com/image/infoImage/202404/28/ifm2024042821592111875683.jpeg?1080x810" alt="草龙文化历史" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-primary/60"></div>
+        </div>
+        <div class="container mx-auto px-4 z-10 text-center">
+            <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-white text-shadow mb-4">草龙文化历史展</h1>
+            <p class="text-[clamp(1rem,2vw,1.25rem)] text-white max-w-2xl mx-auto mb-8">
+                追溯湖口草龙的千年历史，见证这一非遗瑰宝的传承与发展
+            </p>
+            <a href="#history" class="inline-block bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg">
+                探索历史 <i class="fa fa-arrow-down ml-2"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- 云纹分隔线 -->
+<div class="relative h-10 overflow-hidden opacity-[0.12]">
+    <svg viewBox="0 0 1200 40" preserveAspectRatio="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,20 Q50,0 100,20 Q150,40 200,20 Q250,0 300,20 Q350,40 400,20 Q450,0 500,20 Q550,40 600,20 Q650,0 700,20 Q750,40 800,20 Q850,0 900,20 Q950,40 1000,20 Q1050,0 1100,20 Q1150,40 1200,20" fill="none" stroke="#5d4037" stroke-width="2"/>
+        <path d="M0,25 Q50,5 100,25 Q150,45 200,25 Q250,5 300,25 Q350,45 400,25 Q450,5 500,25 Q550,45 600,25 Q650,5 700,25 Q750,45 800,25 Q850,5 900,25 Q950,45 1000,25 Q1050,5 1100,25 Q1150,45 1200,25" fill="none" stroke="#d32f2f" stroke-width="1" opacity="0.5"/>
+    </svg>
+</div>
+
+    <main class="container mx-auto px-4 py-16">
+        <!-- 历史时间线 -->
+        <section id="history" class="mb-20">
+            <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-primary text-center mb-12">草龙的历史沿革</h2>
+            
+            <div class="relative">
+                <!-- 时间线 -->
+                <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-primary/20"></div>
+                
+                <!-- 时间点1 -->
+                <div class="timeline-item mb-16 relative" data-reveal="left">
+                    <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-primary rounded-full border-4 border-white shadow-lg z-10" style="animation: dotPulse 2.5s infinite;"></div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="md:text-right md:pr-12">
+                            <h3 class="text-2xl font-bold text-primary mb-3">起源传说</h3>
+                            <p class="text-gray-700 leading-relaxed">
+                                湖口草龙起源可追溯至南宋时期，传说当地遭遇大旱，百姓祈求龙王降雨，以稻草扎龙祭祀，终得甘霖。此后，扎草龙祈雨便成为当地习俗，历经数百年传承至今。
+                            </p>
+                            <div class="timeline-detail">
+                                <p class="text-sm text-gray-500 bg-primary/5 p-3 rounded-lg">
+                                    <i class="fa fa-info-circle text-secondary mr-1"></i>
+                                    草龙祈雨习俗源于南宋，是当地百姓最原始的信仰表达形式。据传，扎制草龙祭祀后，天降甘霖，从此草龙成为湖口地区最神圣的民间艺术。
+                                </p>
+                            </div>
+                            <span class="expand-hint"><i class="fa fa-chevron-down"></i> 点击展开详情</span>
+                        </div>
+                        <div class="md:pl-12">
+                            <div class="rounded-xl overflow-hidden shadow-lg">
+                                <img src="起源.png" alt="起源传说" class="lightbox-img w-full h-auto md:h-96 object-cover">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 时间点2 -->
+                <div class="timeline-item mb-16 relative" data-reveal="right">
+                    <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-primary rounded-full border-4 border-white shadow-lg z-10" style="animation: dotPulse 2.5s infinite; animation-delay: 0.6s;"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="md:order-2 md:pl-8"> <!-- 减少左侧内容的内边距，给图片更多空间 -->
+                            <h3 class="text-2xl font-bold text-primary mb-3">明清时期的发展</h3>
+                            <p class="text-gray-700 leading-relaxed">
+                                明清时期，湖口草龙制作工艺逐渐成熟，不仅用于祈雨，还成为元宵节等节日的重要表演形式。草龙造型更加精致，舞动技巧也日益丰富，形成了独特的地域文化特色。
+                            </p>
+                            <div class="timeline-detail">
+                                <p class="text-sm text-gray-500 bg-primary/5 p-3 rounded-lg">
+                                    <i class="fa fa-info-circle text-secondary mr-1"></i>
+                                    明清两代是湖口草龙发展的黄金时期，每逢元宵佳节，数十条草龙同时起舞，场面蔚为壮观，吸引了周边数县百姓前来观赏。
+                                </p>
+                            </div>
+                            <span class="expand-hint"><i class="fa fa-chevron-down"></i> 点击展开详情</span>
+                        </div>
+                        <div class="md:order-1 md:text-right md:pr-0"> <!-- 右侧图片区域去掉右侧内边距 -->
+                            <div class="rounded-xl overflow-hidden shadow-lg">
+                                <img src="起源2.png" alt="明清时期" class="lightbox-img w-full h-auto md:h-96 object-cover"> <!-- 增加图片高度，并且设置高度在小屏幕下自动适应，在中屏幕以上高度为h-96 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 时间点3 -->
+                <div class="timeline-item mb-16 relative" data-reveal="left">
+                    <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-primary rounded-full border-4 border-white shadow-lg z-10" style="animation: dotPulse 2.5s infinite; animation-delay: 1.2s;"></div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="md:text-right md:pr-12">
+                            <h3 class="text-2xl font-bold text-primary mb-3">近现代传承</h3>
+                            <p class="text-gray-700 leading-relaxed">
+                                20世纪，湖口草龙经历了社会变革的考验，但在当地政府和民间艺人的努力下，这一传统技艺得以保留。1996年，湖口县被文化部命名为"中国民间艺术（草龙）之乡"。
+                            </p>
+                            <div class="timeline-detail">
+                                <p class="text-sm text-gray-500 bg-primary/5 p-3 rounded-lg">
+                                    <i class="fa fa-info-circle text-secondary mr-1"></i>
+                                    在文化大革命期间，草龙制作一度中断。改革开放后，在喻芳泽等老艺人的努力下，湖口草龙重获新生，并逐渐走向全国舞台。
+                                </p>
+                            </div>
+                            <span class="expand-hint"><i class="fa fa-chevron-down"></i> 点击展开详情</span>
+                        </div>
+                        <div class="md:pl-12">
+                            <div class="rounded-xl overflow-hidden shadow-lg">
+                                <img src="http://k.sinaimg.cn/n/sinakd20200929ac/223/w600h423/20200929/075e-izwfpys5020357.jpg/w700d1q75cms.jpg" alt="近现代传承" class="lightbox-img w-full h-auto md:h-96 object-cover">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 时间点4 -->
+                <div class="timeline-item relative" data-reveal="right">
+                    <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-primary rounded-full border-4 border-white shadow-lg z-10" style="animation: dotPulse 2.5s infinite; animation-delay: 1.8s;"></div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="md:order-2 md:pl-12">
+                            <h3 class="text-2xl font-bold text-primary mb-3">现代保护与发展</h3>
+                            <p class="text-gray-700 leading-relaxed">
+                                2008年，湖口草龙被列入国家级非物质文化遗产名录。如今，通过学校教育、文化节展演和旅游开发等多种方式，湖口草龙不仅在本地得到传承，还走向全国，成为江西文化的重要名片。
+                            </p>
+                            <div class="timeline-detail">
+                                <p class="text-sm text-gray-500 bg-primary/5 p-3 rounded-lg">
+                                    <i class="fa fa-info-circle text-secondary mr-1"></i>
+                                    如今，湖口草龙已多次亮相中央电视台和各大文化节，成为江西省对外文化交流的重要名片，新一代传承人正在用创新方式让草龙焕发新的生命力。
+                                </p>
+                            </div>
+                            <span class="expand-hint"><i class="fa fa-chevron-down"></i> 点击展开详情</span>
+                        </div>
+                        <div class="md:order-1 md:text-right md:pr-12">
+                            <div class="rounded-xl overflow-hidden shadow-lg">
+                                <img src="https://www.hukou.gov.cn/zx/04/202402/W020240223686171705343_ORIGIN.png" alt="现代保护" class="lightbox-img w-full h-auto md:h-96 object-cover">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    <!-- 云纹分隔线 -->
+<div class="relative h-10 overflow-hidden opacity-[0.12]">
+    <svg viewBox="0 0 1200 40" preserveAspectRatio="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,20 Q50,0 100,20 Q150,40 200,20 Q250,0 300,20 Q350,40 400,20 Q450,0 500,20 Q550,40 600,20 Q650,0 700,20 Q750,40 800,20 Q850,0 900,20 Q950,40 1000,20 Q1050,0 1100,20 Q1150,40 1200,20" fill="none" stroke="#5d4037" stroke-width="2"/>
+        <path d="M0,25 Q50,5 100,25 Q150,45 200,25 Q250,5 300,25 Q350,45 400,25 Q450,5 500,25 Q550,45 600,25 Q650,5 700,25 Q750,45 800,25 Q850,5 900,25 Q950,45 1000,25 Q1050,5 1100,25 Q1150,45 1200,25" fill="none" stroke="#d32f2f" stroke-width="1" opacity="0.5"/>
+    </svg>
+</div>
+        
+        <!-- 文化价值 -->
+        <section class="mb-20 bg-white rounded-2xl shadow-xl p-8 md:p-12">
+            <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-primary text-center mb-12">文化价值与传承</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-neutral p-6 rounded-xl transition-all duration-300 hover:shadow-lg" data-reveal data-reveal-delay="1">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <i class="fa fa-history text-2xl text-primary"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-primary text-center mb-3">历史见证</h3>
+                    <p class="text-gray-700 text-center">
+                        湖口草龙承载了当地千年的历史记忆，是研究江南地区民俗文化和农耕文明的重要实物资料。
+                    </p>
+                </div>
+                
+                <div class="bg-neutral p-6 rounded-xl transition-all duration-300 hover:shadow-lg" data-reveal data-reveal-delay="2">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <i class="fa fa-users text-2xl text-primary"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-primary text-center mb-3">民俗文化</h3>
+                    <p class="text-gray-700 text-center">
+                        草龙表演融合了舞蹈、音乐和工艺，是当地节庆活动中不可或缺的一部分，体现了民众的精神信仰和审美情趣。
+                    </p>
+                </div>
+                
+                <div class="bg-neutral p-6 rounded-xl transition-all duration-300 hover:shadow-lg" data-reveal data-reveal-delay="3">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <i class="fa fa-handshake text-2xl text-primary"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-primary text-center mb-3">技艺传承</h3>
+                    <p class="text-gray-700 text-center">
+                        草龙制作技艺代代相传，凝聚了民间艺人的智慧和创造力，是中华民族非物质文化遗产的重要组成部分。
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-12">
+                <h3 class="text-2xl font-bold text-primary text-center mb-6">代表性传承人</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"> <!-- 调整网格布局并限制最大宽度 -->
+                    <div class="bg-white rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl" data-reveal="left">
+                        <img src="https://picture01.52hrttpic.com/image/infoImage/202404/28/ifm2024042821592111875692.jpeg?1080x767" alt="传承人1" class="lightbox-img w-full h-64 object-cover">
+                        <div class="p-6">
+                            <h4 class="text-xl font-bold text-primary mb-2">喻芳泽</h4>
+                            <p class="text-gray-600 mb-3">喻芳泽，男，1944年6月12日出生，江西湖口人。第一批国家级非物质文化遗产项目草编（湖口草龙）代表性传承人</p>
+                            <div class="flex space-x-2">
+                                <span class="bg-primary/10 text-primary text-sm px-3 py-1 rounded-full">传统制作技艺</span>
+                                <span class="bg-primary/10 text-primary text-sm px-3 py-1 rounded-full">第三代传人</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl" data-reveal="right">
+                        <img src="LOCAL1733964284399T2WQ3PYQZ3.jpg" alt="传承人2" class="lightbox-img w-full h-64 object-cover">
+                        <div class="p-6">
+                            <h4 class="text-xl font-bold text-primary mb-2">喻远莉</h4>
+                            <p class="text-gray-600 mb-3">喻远莉，国家级非物质文化遗产项目湖口草龙的省级代表性传承人，2021
+                                年度江西省级非物质文化遗产代表性传承人传承活动评估为（优秀）。</p>
+                            <div class="flex space-x-2">
+                                <span class="bg-primary/10 text-primary text-sm px-3 py-1 rounded-full">技艺创新</span>
+                                <span class="bg-primary/10 text-primary text-sm px-3 py-1 rounded-full">第四代传人</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    <!-- 云纹分隔线 -->
+<div class="relative h-10 overflow-hidden opacity-[0.12]">
+    <svg viewBox="0 0 1200 40" preserveAspectRatio="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,20 Q50,0 100,20 Q150,40 200,20 Q250,0 300,20 Q350,40 400,20 Q450,0 500,20 Q550,40 600,20 Q650,0 700,20 Q750,40 800,20 Q850,0 900,20 Q950,40 1000,20 Q1050,0 1100,20 Q1150,40 1200,20" fill="none" stroke="#5d4037" stroke-width="2"/>
+        <path d="M0,25 Q50,5 100,25 Q150,45 200,25 Q250,5 300,25 Q350,45 400,25 Q450,5 500,25 Q550,45 600,25 Q650,5 700,25 Q750,45 800,25 Q850,5 900,25 Q950,45 1000,25 Q1050,5 1100,25 Q1150,45 1200,25" fill="none" stroke="#d32f2f" stroke-width="1" opacity="0.5"/>
+    </svg>
+</div>
+        
+
+        
+        <!-- 相关视频 -->
+        <section class="mb-20">
+            <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-primary text-center mb-12">历史纪录片</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl overflow-hidden shadow-lg" data-reveal data-reveal-delay="1">
+                    <div class="relative h-64">
+                        <iframe width="100%" height="100%" src="https://player.bilibili.com/player.html?aid=853973611&bvid=BV1LL4y1F72E&cid=715612153&page=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-primary mb-2">湖口草龙：千年传承</h3>
+                        <p class="text-gray-600">
+                            这部纪录片深入记录了湖口草龙的历史渊源、制作工艺和文化内涵，展现了这一非遗项目的独特魅力。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl overflow-hidden shadow-lg" data-reveal data-reveal-delay="2">
+                    <div class="relative h-64">
+                        <iframe width="100%" height="100%" src="https://player.bilibili.com/player.html?aid=391018782&bvid=BV1md4y1s7Aa&cid=917700445&page=1" allowfullscreen></iframe>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-primary mb-2">草龙传承人的故事</h3>
+                        <p class="text-gray-600">
+                            跟随镜头走进草龙传承人的生活，了解他们如何坚守传统，将这门古老技艺代代相传。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    <!-- 云纹分隔线 -->
+<div class="relative h-10 overflow-hidden opacity-[0.12]">
+    <svg viewBox="0 0 1200 40" preserveAspectRatio="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,20 Q50,0 100,20 Q150,40 200,20 Q250,0 300,20 Q350,40 400,20 Q450,0 500,20 Q550,40 600,20 Q650,0 700,20 Q750,40 800,20 Q850,0 900,20 Q950,40 1000,20 Q1050,0 1100,20 Q1150,40 1200,20" fill="none" stroke="#5d4037" stroke-width="2"/>
+        <path d="M0,25 Q50,5 100,25 Q150,45 200,25 Q250,5 300,25 Q350,45 400,25 Q450,5 500,25 Q550,45 600,25 Q650,5 700,25 Q750,45 800,25 Q850,5 900,25 Q950,45 1000,25 Q1050,5 1100,25 Q1150,45 1200,25" fill="none" stroke="#d32f2f" stroke-width="1" opacity="0.5"/>
+    </svg>
+</div>
+        
+        <!-- 参观信息 -->
+        <section class="bg-primary text-white rounded-2xl overflow-hidden shadow-xl" data-reveal>
+            <div class="grid grid-cols-1 md:grid-cols-2">
+                <div class="p-8 md:p-12">
+                    <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mb-6">参观草龙文化历史展</h2>
+                    <p class="mb-6 text-white/90">
+                        欢迎来到湖口草龙博物馆，亲身感受这一千年非遗的独特魅力。通过实物展示、互动体验和专业讲解，深入了解草龙文化的历史与传承。
+                    </p>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <i class="fa fa-map-marker text-secondary mt-1 mr-3"></i>
+                            <span>江西省九江市湖口县石钟山景区内</span>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fa fa-clock text-secondary mt-1 mr-3"></i>
+                            <span>开放时间：周二至周日 9:00-17:00（周一闭馆）</span>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fa fa-ticket text-secondary mt-1 mr-3"></i>
+                            <span>门票：30元/人，学生票15元/人</span>
+                        </div>
+                    </div>
+                    <div class="mt-8">
+                        <form id="booking-form" class="space-y-4" novalidate>
+                            <div>
+                                <label for="booking-name" class="block text-white/90 text-sm mb-1">姓名</label>
+                                <input type="text" id="booking-name"
+                                    class="w-full px-4 py-2.5 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-secondary"
+                                    placeholder="请输入您的姓名">
+                            </div>
+                            <div>
+                                <label for="booking-phone" class="block text-white/90 text-sm mb-1">手机号码</label>
+                                <input type="tel" id="booking-phone"
+                                    class="w-full px-4 py-2.5 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-secondary"
+                                    placeholder="请输入您的手机号码">
+                            </div>
+                            <div>
+                                <label for="booking-date" class="block text-white/90 text-sm mb-1">参观日期</label>
+                                <input type="date" id="booking-date"
+                                    class="w-full px-4 py-2.5 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-secondary">
+                            </div>
+                            <div>
+                                <label for="booking-people" class="block text-white/90 text-sm mb-1">参观人数</label>
+                                <input type="number" id="booking-people" min="1" max="100" value="1"
+                                    class="w-full px-4 py-2.5 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-secondary">
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-white text-primary hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                <i class="fa fa-calendar-check mr-2"></i>预约参观
+                            </button>
+                            <div id="booking-form-feedback" class="hidden mt-3 p-3 rounded-lg text-center text-sm font-medium"></div>
+                        </form>
+                    </div>
+                </div>
+                <div class="h-80 md:h-auto relative">
+                    <img src="微信图片_20250508125827.png" alt="博物馆外观" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-primary text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">湖口草龙博物馆</h3>
+                    <p class="text-white/80 mb-4">
+                        致力于保护和传承湖口草龙这一国家级非物质文化遗产，弘扬中华民族优秀传统文化。
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-white hover:text-secondary transition-colors">
+                            <i class="fa fa-weixin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-white hover:text-secondary transition-colors">
+                            <i class="fa fa-weibo text-xl"></i>
+                        </a>
+                        <a href="#" class="text-white hover:text-secondary transition-colors">
+                            <i class="fa fa-youtube text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-4">快速链接</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-white/80 hover:text-secondary transition-colors">首页</a></li>
+                        <li><a href="#" class="text-white/80 hover:text-secondary transition-colors">草龙介绍</a></li>
+                        <li><a href="#" class="text-white/80 hover:text-secondary transition-colors">展览展示</a></li>
+                        <li><a href="草龙设计室.html" class="text-white/80 hover:text-secondary transition-colors">草龙设计室</a></li>
+                        <li><a href="草龙数据可视化.html" class="text-white/80 hover:text-secondary transition-colors">数据可视化</a></li>
+                        <li><a href="#" class="text-white/80 hover:text-secondary transition-colors">文化活动</a></li>
+                        <li><a href="#" class="text-white/80 hover:text-secondary transition-colors">关于我们</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-4">联系我们</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <i class="fa fa-map-marker mt-1 mr-3"></i>
+                            <span>江西省九江市湖口县石钟山景区内</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-phone mt-1 mr-3"></i>
+                            <span>0792-6332123</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-envelope mt-1 mr-3"></i>
+                            <span>info@hukou-dragon.com</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-4">开放时间</h3>
+                    <ul class="space-y-2">
+                        <li>周二至周日: 9:00 - 17:00</li>
+                        <li>周一: 闭馆</li>
+                        <li>法定节假日: 9:00 - 17:30</li>
+                    </ul>
+                    <div class="mt-4">
+                        <a href="#" class="text-white hover:text-secondary transition-colors">
+                            <i class="fa fa-map-o mr-2"></i>查看地图
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/20 mt-8 pt-8 text-center text-white/60">
+                <p>&copy; 2025 湖口草龙博物馆. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 bg-secondary text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-300 opacity-0 translate-y-10 hover:bg-secondary/90">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+    <!-- Lightbox overlay -->
+    <div class="lightbox-overlay" id="lightbox">
+        <button class="lightbox-close" aria-label="关闭">&times;</button>
+        <img src="" alt="放大图片" id="lightbox-img">
+    </div>
+
+    <script>
+        // Scroll reveal with Intersection Observer
+        (function() {
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+            document.querySelectorAll('[data-reveal]').forEach(function(el) {
+                observer.observe(el);
+            });
+        })();
+        // 返回顶部按钮
+        const backToTopBtn = document.getElementById('back-to-top');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopBtn.classList.remove('opacity-0', 'translate-y-10');
+                backToTopBtn.classList.add('opacity-100', 'translate-y-0');
+            } else {
+                backToTopBtn.classList.remove('opacity-100', 'translate-y-0');
+                backToTopBtn.classList.add('opacity-0', 'translate-y-10');
+            }
+        });
+        
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // 导航栏滚动效果
+        const nav = document.querySelector('nav');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 50) {
+                nav.classList.add('py-2', 'shadow-lg');
+                nav.classList.remove('py-3');
+            } else {
+                nav.classList.add('py-3');
+                nav.classList.remove('py-2', 'shadow-lg');
+            }
+        });
+        
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Mobile menu toggle
+        (function() {
+            var btn = document.getElementById('mobile-menu-btn');
+            var menu = document.getElementById('mobile-menu');
+            if (!btn || !menu) return;
+            btn.addEventListener('click', function() {
+                menu.classList.toggle('hidden');
+                var icon = btn.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            });
+            menu.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    menu.classList.add('hidden');
+                    var icon = btn.querySelector('i');
+                    icon.classList.add('fa-bars');
+                    icon.classList.remove('fa-times');
+                });
+            });
+        })();
+
+        // Image lightbox
+        (function() {
+            var lightbox = document.getElementById('lightbox');
+            var lightboxImg = document.getElementById('lightbox-img');
+            if (!lightbox || !lightboxImg) return;
+            document.querySelectorAll('.lightbox-img').forEach(function(img) {
+                img.style.cursor = 'zoom-in';
+                img.addEventListener('click', function() {
+                    lightboxImg.src = img.src;
+                    lightboxImg.alt = img.alt;
+                    lightbox.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+            });
+            function closeLightbox() {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+            lightbox.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+            lightbox.addEventListener('click', function(e) {
+                if (e.target === lightbox) closeLightbox();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeLightbox();
+            });
+        })();
+
+        // Smooth page transitions
+        document.querySelectorAll('a[href]').forEach(function(link) {
+            var href = link.getAttribute('href');
+            if (href && href.endsWith('.html') && !href.startsWith('http') && !href.startsWith('#')) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.body.classList.add('page-fading-out');
+                    setTimeout(function() {
+                        window.location.href = href;
+                    }, 300);
+                });
+            }
+        });
+
+        // Interactive timeline
+        document.querySelectorAll('.timeline-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.timeline-item.expanded').forEach(function(other) {
+                    if (other !== item) other.classList.remove('expanded');
+                });
+                item.classList.toggle('expanded');
+            });
+        });
+
+        // === 表单提交：预约参观 ===
+        (function() {
+            var API_BASE = 'http://localhost:3000';  // 部署时修改为线上地址
+
+            var form = document.getElementById('booking-form');
+            var feedback = document.getElementById('booking-form-feedback');
+            var submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+
+            if (!form || !feedback || !submitBtn) return;
+
+            function showFeedback(message, isError) {
+                feedback.textContent = message;
+                feedback.classList.remove('hidden');
+                if (isError) {
+                    feedback.className = 'mt-3 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-800 border border-red-300';
+                } else {
+                    feedback.className = 'mt-3 p-3 rounded-lg text-center text-sm font-medium bg-green-100 text-green-800 border border-green-300';
+                }
+            }
+
+            function hideFeedback() {
+                feedback.classList.add('hidden');
+            }
+
+            function setLoading(loading) {
+                if (loading) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>提交中...';
+                    submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa fa-calendar-check mr-2"></i>预约参观';
+                    submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                }
+            }
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                hideFeedback();
+
+                var name = (document.getElementById('booking-name').value || '').trim();
+                var phone = (document.getElementById('booking-phone').value || '').trim();
+                var visit_date = (document.getElementById('booking-date').value || '').trim();
+                var number_of_people = (document.getElementById('booking-people').value || '').trim();
+                var errors = [];
+
+                if (!name) errors.push('请填写您的姓名');
+                if (!phone || !/^1[3-9]\d{9}$/.test(phone)) errors.push('请填写有效的手机号码');
+                if (!visit_date) errors.push('请选择参观日期');
+                var people = parseInt(number_of_people, 10);
+                if (!number_of_people || isNaN(people) || people < 1 || people > 100) errors.push('参观人数须在1-100之间');
+
+                if (errors.length > 0) {
+                    showFeedback(errors.join('；'), true);
+                    return;
+                }
+
+                setLoading(true);
+
+                fetch(API_BASE + '/api/exhibition-booking', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, phone: phone, visit_date: visit_date, number_of_people: people })
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    setLoading(false);
+                    if (data.success) {
+                        showFeedback(data.message, false);
+                        form.reset();
+                        document.getElementById('booking-people').value = '1';
+                    } else {
+                        var msg = data.errors ? data.errors.join('；') : (data.message || '提交失败，请重试');
+                        showFeedback(msg, true);
+                    }
+                })
+                .catch(function(err) {
+                    setLoading(false);
+                    showFeedback('网络错误，请检查网络连接后重试。', true);
+                    console.error('Fetch error:', err);
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
