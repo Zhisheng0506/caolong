@@ -17,7 +17,27 @@ var PORT = process.env.PORT || 3000;
 // ---- 中间件 ----
 app.use(cors({ origin: '*' }));
 app.use(express.json());
-app.use(express.static(__dirname));  // 提供静态文件服务
+
+// Production: serve Vue build output. Development: serve root files.
+var distPath = path.join(__dirname, 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
+app.use(express.static(__dirname));  // Fallback: root static files (草龙设计室.html, images, etc.)
+
+// SPA fallback: redirect all non-API, non-file routes to index.html
+app.get(/^\/(?!api\/)/, function(req, res, next) {
+  // Skip if the request looks like a file (has extension)
+  if (path.extname(req.path)) return next();
+  // Skip API routes (already excluded by regex)
+  // Serve Vue's index.html for SPA history mode
+  var spaIndex = path.join(distPath, 'index.html');
+  if (fs.existsSync(spaIndex)) {
+    res.sendFile(spaIndex);
+  } else {
+    next();
+  }
+});
 
 // ---- 数据库 ----
 var db;                  // sql.js Database 实例
