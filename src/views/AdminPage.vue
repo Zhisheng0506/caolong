@@ -12,15 +12,51 @@
             <router-link to="/" class="text-white hover:text-yellow-300 transition-colors text-sm no-underline">
               <i class="fa fa-home mr-1"></i>回到首页
             </router-link>
-            <button class="text-white hover:text-yellow-300 transition-colors" @click="loadData" title="刷新数据">
+            <button v-if="authenticated" class="text-white hover:text-yellow-300 transition-colors" @click="loadData" title="刷新数据">
               <i class="fa fa-refresh" :class="{ 'fa-spin': refreshing }"></i>
+            </button>
+            <button v-if="authenticated" class="text-white/60 hover:text-white transition-colors text-sm" @click="logout" title="退出登录">
+              <i class="fa fa-sign-out"></i>
             </button>
           </div>
         </div>
       </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-8">
+    <!-- 登录界面 -->
+    <div v-if="!authenticated" class="flex items-center justify-center min-h-[80vh]">
+      <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm">
+        <div class="text-center mb-6">
+          <i class="fa fa-lock text-4xl text-secondary mb-3"></i>
+          <h2 class="text-xl font-bold text-primary">后台管理登录</h2>
+        </div>
+        <form @submit.prevent="handleLogin" class="space-y-4">
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">管理密码</label>
+            <input
+              v-model="loginPassword"
+              type="password"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
+              placeholder="请输入密码"
+              autofocus
+            >
+          </div>
+          <button
+            type="submit"
+            :disabled="loginLoading"
+            class="w-full bg-secondary hover:bg-red-700 text-white font-medium py-2.5 rounded-lg transition-colors border-none cursor-pointer"
+            :class="{ 'opacity-70 cursor-not-allowed': loginLoading }"
+          >
+            <i v-if="loginLoading" class="fa fa-spinner fa-spin mr-2"></i>
+            {{ loginLoading ? '验证中...' : '登 录' }}
+          </button>
+          <p v-if="loginError" class="text-red-500 text-sm text-center">{{ loginError }}</p>
+        </form>
+      </div>
+    </div>
+
+    <!-- 管理面板（登录后可见） -->
+    <main v-if="authenticated" class="container mx-auto px-4 py-8">
       <!-- 页面标题 -->
       <div class="text-center mb-8">
         <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-primary mb-2">
@@ -208,7 +244,52 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { api } from '@/api'
+import { api, getToken } from '@/api'
+
+// ---- 认证 ----
+const authenticated = ref(false)
+const loginPassword = ref('')
+const loginLoading = ref(false)
+const loginError = ref('')
+
+async function checkAuth() {
+  const token = getToken()
+  if (!token) return
+  try {
+    await api.verifyToken()
+    authenticated.value = true
+  } catch {
+    localStorage.removeItem('admin_token')
+  }
+}
+
+async function handleLogin() {
+  loginError.value = ''
+  if (!loginPassword.value.trim()) {
+    loginError.value = '请输入密码'
+    return
+  }
+  loginLoading.value = true
+  try {
+    const data = await api.login(loginPassword.value.trim())
+    localStorage.setItem('admin_token', data.token)
+    authenticated.value = true
+    loginPassword.value = ''
+    loadData()
+  } catch (err) {
+    loginError.value = err.message || '密码错误'
+  } finally {
+    loginLoading.value = false
+  }
+}
+
+function logout() {
+  localStorage.removeItem('admin_token')
+  authenticated.value = false
+  craftData.value = []
+  bookingData.value = []
+  orderData.value = []
+}
 
 const tabs = [
   { key: 'craft', label: '工艺体验报名', icon: 'fa fa-paint-brush' },
@@ -237,6 +318,10 @@ async function loadData() {
     bookingData.value = bookingRes.data
     orderData.value = orderRes.data
   } catch (err) {
+    if (err.message === '请先登录') {
+      logout()
+      return
+    }
     error.value = '网络错误，请确认服务器已启动。'
     console.error('Fetch error:', err)
   } finally {
@@ -261,5 +346,8 @@ async function deleteRow(type, id) {
   }
 }
 
-onMounted(loadData)
+onMounted(async () => {
+  await checkAuth()
+  if (authenticated.value) loadData()
+})
 </script>

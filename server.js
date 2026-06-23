@@ -18,6 +18,58 @@ var PORT = process.env.PORT || 3000;
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+// ---- 简易认证 ----
+var ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '123';
+var VALID_TOKENS = {};  // token -> expiry timestamp
+
+// 生成简单 token（base64 编码，24小时有效期）
+function createToken() {
+  var payload = Date.now().toString(36) + '.' + Math.random().toString(36).slice(2);
+  var token = Buffer.from(payload).toString('base64');
+  VALID_TOKENS[token] = Date.now() + 24 * 60 * 60 * 1000; // 24小时过期
+  return token;
+}
+
+// 验证 token
+function verifyToken(token) {
+  if (!token || !VALID_TOKENS[token]) return false;
+  if (Date.now() > VALID_TOKENS[token]) {
+    delete VALID_TOKENS[token];
+    return false;
+  }
+  return true;
+}
+
+// 鉴权中间件
+function requireAuth(req, res, next) {
+  var token = (req.headers.authorization || '').replace('Bearer ', '');
+  if (!verifyToken(token)) {
+    return res.status(401).json({ success: false, message: '请先登录' });
+  }
+  next();
+}
+
+// POST: 登录
+app.post('/api/auth/login', function(req, res) {
+  var password = (req.body.password || '').trim();
+  if (password === ADMIN_PASSWORD) {
+    var token = createToken();
+    res.json({ success: true, token: token });
+  } else {
+    res.status(401).json({ success: false, message: '密码错误' });
+  }
+});
+
+// POST: 验证 token 是否有效
+app.post('/api/auth/verify', function(req, res) {
+  var token = (req.headers.authorization || '').replace('Bearer ', '');
+  if (verifyToken(token)) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false, message: '登录已过期，请重新登录' });
+  }
+});
+
 // Production: serve Vue build output. Development: serve root files.
 var distPath = path.join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {
@@ -224,7 +276,7 @@ app.post('/api/exhibition-booking', function(req, res) {
 });
 
 // GET: 查询所有工艺体验报名
-app.get('/api/craft-registrations', function(req, res) {
+app.get('/api/craft-registrations', requireAuth, function(req, res) {
     try {
         var results = db.exec('SELECT id, name, email, phone, message, created_at FROM craft_registrations ORDER BY id DESC');
         var rows = (results.length > 0) ? results[0].values.map(function(row) {
@@ -245,7 +297,7 @@ app.get('/api/craft-registrations', function(req, res) {
 });
 
 // GET: 查询所有展览参观预约
-app.get('/api/exhibition-bookings', function(req, res) {
+app.get('/api/exhibition-bookings', requireAuth, function(req, res) {
     try {
         var results = db.exec('SELECT id, name, phone, visit_date, number_of_people, created_at FROM exhibition_bookings ORDER BY id DESC');
         var rows = (results.length > 0) ? results[0].values.map(function(row) {
@@ -266,7 +318,7 @@ app.get('/api/exhibition-bookings', function(req, res) {
 });
 
 // DELETE: 删除一条工艺体验报名
-app.delete('/api/craft-registrations/:id', function(req, res) {
+app.delete('/api/craft-registrations/:id', requireAuth, function(req, res) {
     try {
         var id = parseInt(req.params.id, 10);
         console.log('[删除请求] 类型=报名 原始ID=' + req.params.id + ' 解析后=' + id);
@@ -289,7 +341,7 @@ app.delete('/api/craft-registrations/:id', function(req, res) {
 });
 
 // DELETE: 删除一条展览参观预约
-app.delete('/api/exhibition-bookings/:id', function(req, res) {
+app.delete('/api/exhibition-bookings/:id', requireAuth, function(req, res) {
     try {
         var id = parseInt(req.params.id, 10);
         console.log('[删除请求] 类型=预约 原始ID=' + req.params.id + ' 解析后=' + id);
@@ -344,7 +396,7 @@ app.post('/api/orders', function(req, res) {
 });
 
 // GET: 查询所有订单
-app.get('/api/orders', function(req, res) {
+app.get('/api/orders', requireAuth, function(req, res) {
     try {
         var results = db.exec('SELECT id, product_name, price, quantity, customer_name, phone, address, created_at FROM orders ORDER BY id DESC');
         var rows = (results.length > 0) ? results[0].values.map(function(row) {
@@ -367,7 +419,7 @@ app.get('/api/orders', function(req, res) {
 });
 
 // DELETE: 删除一个订单
-app.delete('/api/orders/:id', function(req, res) {
+app.delete('/api/orders/:id', requireAuth, function(req, res) {
     try {
         var id = parseInt(req.params.id, 10);
         if (isNaN(id) || id < 1) {
@@ -408,7 +460,7 @@ initSqlJs().then(function(SQL) {
         console.log('========================================');
         console.log('湖口草龙博物馆 API 服务器已启动');
         console.log('网站首页: http://localhost:' + PORT);
-        console.log('后台管理: http://localhost:' + PORT + '/admin.html');
+        console.log('后台管理: http://localhost:' + PORT + '/admin');
         console.log('========================================');
     });
 

@@ -204,7 +204,7 @@
           <div class="w-24 h-1 bg-secondary mx-auto mb-8"></div>
           <p class="text-lg text-gray-700 max-w-3xl mx-auto">湖口草龙文化衍生产品，将传统工艺与现代设计相结合，让非遗文化走进生活。</p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div v-for="(product, i) in products" :key="i" class="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group" :data-reveal-delay="i+1">
             <div class="relative overflow-hidden">
               <img :src="product.img" :alt="product.name" class="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110">
@@ -320,10 +320,12 @@ const features = [
 ]
 
 const products = [
-  { name: '草龙主题丝巾', desc: '传统纹样，丝绸材质', price: 198, stars: 4.5, img: 'https://picsum.photos/seed/grassdragon1/800/600' },
-  { name: '草龙造型摆件', desc: '手工制作，精美逼真', price: 298, stars: 4, img: 'https://picsum.photos/seed/grassdragon2/800/600' },
-  { name: '草龙文化书签套装', desc: '5枚套装，工艺精美', price: 58, stars: 5, img: 'https://picsum.photos/seed/grassdragon3/800/600' },
-  { name: '草龙主题帆布袋', desc: '环保材质，结实耐用', price: 68, stars: 3.5, img: 'https://picsum.photos/seed/grassdragon4/800/600' },
+  { name: '草龙书签', desc: '金属材质，精美书签', price: 38, stars: 5, img: '/zhoubian/草龙书签.png' },
+  { name: '草龙冰箱贴', desc: '陶瓷工艺，家居装饰', price: 28, stars: 4.5, img: '/zhoubian/草龙冰箱贴.png' },
+  { name: '草龙帆布包', desc: '环保材质，日常实用', price: 68, stars: 4, img: '/zhoubian/草龙帆布包.png' },
+  { name: '草龙挂件', desc: '草龙造型，随身饰品', price: 48, stars: 4.5, img: '/zhoubian/草龙挂件.png' },
+  { name: '草龙摆件', desc: '手工制作，桌面装饰', price: 128, stars: 4, img: '/zhoubian/草龙摆件.png' },
+  { name: '草龙笔记本', desc: '草龙主题，记录生活', price: 32, stars: 5, img: '/zhoubian/草龙笔记本.png' },
 ]
 
 // Purchase modal
